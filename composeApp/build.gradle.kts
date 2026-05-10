@@ -41,17 +41,11 @@ kotlin {
     }
 
     sourceSets {
-
-        // Android only
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
-            // Koin для Android (только здесь, не в jvmMain!)
             implementation(libs.koin.android)
-            implementation(libs.koin.androidx.compose)
         }
-
-        // Общий код для всех платформ
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -59,21 +53,16 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
-            // ViewModel
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            // Koin core + compose
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
-            // Coroutines
+            implementation(libs.koin.viewmodel)
             implementation(libs.coroutines.core)
         }
-
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-
-        // Desktop JVM only
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)

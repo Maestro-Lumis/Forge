@@ -1,5 +1,6 @@
 package com.application.forge
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,7 +12,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        //Запуск Koin
+
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
+        enableEdgeToEdge()
+
         initKoin()
 
         setContent {

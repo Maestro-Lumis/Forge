@@ -7,7 +7,7 @@ import com.application.forge.domain.repository.WorkoutRepository
 
 class WorkoutRepositoryImpl : WorkoutRepository {
 
-    override suspend fun getTodayWorkout(): Workout {
+    override suspend fun getTodayWorkout(): Workout? {
         // TODO: заменить на запрос к базе данных
         return Workout(
             id                  = "workout_tuesday",

@@ -9,9 +9,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,6 +23,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.application.forge.ui.screens.dashboard.DashboardScreen
 import com.application.forge.ui.screens.dashboard.DashboardViewModel
+import com.application.forge.ui.screens.workout.WorkoutScreen
+import com.application.forge.ui.screens.workout.WorkoutSummaryScreen
+import com.application.forge.ui.screens.workout.WorkoutViewModel
 import com.application.forge.ui.theme.ForgeColors
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -68,7 +75,24 @@ fun ForgeNavGraph(
 
                 // Workout
                 composable(route = Screen.Workout.route) {
-                    PlaceholderScreen(title = "ТРЕНИРОВКА")
+                    // Экран активной тренировки
+                    var isFinished by remember { mutableStateOf(false) }
+                    val workoutViewModel: WorkoutViewModel = koinViewModel()
+                    val state by workoutViewModel.state.collectAsStateWithLifecycle()
+
+                    if (isFinished) {
+                        WorkoutSummaryScreen(
+                            state = state,
+                            onBack = { navController.navigate(Screen.Dashboard.route) {
+                                popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            }},
+                        )
+                    } else {
+                        WorkoutScreen(
+                            onFinished = { isFinished = true },
+                            viewModel = workoutViewModel,
+                        )
+                    }
                 }
 
                 // Progress

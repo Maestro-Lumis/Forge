@@ -8,6 +8,7 @@ import com.application.forge.domain.usecase.GetMuscleStatusUseCase
 import com.application.forge.domain.usecase.GetTodayWorkoutUseCase
 import com.application.forge.domain.usecase.GetUserProfileUseCase
 import com.application.forge.ui.screens.dashboard.DashboardViewModel
+import com.application.forge.ui.screens.workout.WorkoutViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -29,4 +30,6 @@ val appModule = module {
     // ViewModel — живёт пока жив экран
 
     viewModelOf(::DashboardViewModel)
+
+    viewModelOf(::WorkoutViewModel)
 }

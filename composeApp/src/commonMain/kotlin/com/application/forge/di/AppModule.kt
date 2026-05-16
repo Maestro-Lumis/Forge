@@ -9,6 +9,7 @@ import com.application.forge.domain.usecase.GetTodayWorkoutUseCase
 import com.application.forge.domain.usecase.GetUserProfileUseCase
 import com.application.forge.ui.screens.dashboard.DashboardViewModel
 import com.application.forge.ui.screens.workout.WorkoutViewModel
+import com.application.forge.ui.screens.profile.ProfileViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -32,4 +33,6 @@ val appModule = module {
     viewModelOf(::DashboardViewModel)
 
     viewModelOf(::WorkoutViewModel)
+
+    viewModelOf(::ProfileViewModel)
 }

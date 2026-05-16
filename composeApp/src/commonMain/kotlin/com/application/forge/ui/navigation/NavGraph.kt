@@ -23,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.application.forge.ui.screens.dashboard.DashboardScreen
 import com.application.forge.ui.screens.dashboard.DashboardViewModel
+import com.application.forge.ui.screens.profile.ProfileScreen
 import com.application.forge.ui.screens.workout.WorkoutScreen
 import com.application.forge.ui.screens.workout.WorkoutSummaryScreen
 import com.application.forge.ui.screens.workout.WorkoutViewModel
@@ -107,7 +108,7 @@ fun ForgeNavGraph(
 
                 // Profile
                 composable(route = Screen.Profile.route) {
-                    PlaceholderScreen(title = "ПРОФИЛЬ")
+                    ProfileScreen()
                 }
 
                 // Onboarding

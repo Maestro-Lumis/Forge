@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.application.forge.ui.screens.dashboard.DashboardScreen
 import com.application.forge.ui.screens.dashboard.DashboardViewModel
 import com.application.forge.ui.screens.profile.ProfileScreen
+import com.application.forge.ui.screens.progress.ProgressScreen
 import com.application.forge.ui.screens.workout.WorkoutScreen
 import com.application.forge.ui.screens.workout.WorkoutSummaryScreen
 import com.application.forge.ui.screens.workout.WorkoutViewModel
@@ -98,7 +99,7 @@ fun ForgeNavGraph(
 
                 // Progress
                 composable(route = Screen.Progress.route) {
-                    PlaceholderScreen(title = "ПРОГРЕСС")
+                    ProgressScreen()
                 }
 
                 // AI Cha

@@ -1,17 +1,21 @@
 package com.application.forge.ui.navigation
 
-// Screen - все маршруты приложения
-
+// Screen
 sealed class Screen(val route: String) {
 
-    // Онбординг - показывается только при первом запуске
+    // Онбординг
     data object Onboarding : Screen("onboarding")
 
     // Главная
     data object Dashboard : Screen("dashboard")
 
-    // Активная тренировка
-    data object Workout : Screen("workout")
+    // Выбор тренировки перед стартом
+    data object WorkoutPicker : Screen("workout_picker")
+
+    // Активная тренировка (принимает workoutId)
+    data object Workout : Screen("workout/{workoutId}") {
+        fun routeWithId(workoutId: String) = "workout/$workoutId"
+    }
 
     // Прогресс и замеры
     data object Progress : Screen("progress")
@@ -24,7 +28,6 @@ sealed class Screen(val route: String) {
 }
 
 // Экраны нижней панели навигации
-
 data class BottomNavItem(
     val screen: Screen,
     val label: String,
@@ -40,7 +43,7 @@ val bottomNavItems = listOf(
         iconSelected = "⊞",
     ),
     BottomNavItem(
-        screen = Screen.Workout,
+        screen = Screen.WorkoutPicker,
         label = "Тренировка",
         icon = "◎",
         iconSelected = "●",

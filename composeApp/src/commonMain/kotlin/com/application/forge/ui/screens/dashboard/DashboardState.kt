@@ -1,6 +1,6 @@
 package com.application.forge.ui.screens.dashboard
 
-// ─UI State
+// UI State
 data class DashboardState(
     val isLoading: Boolean = true,
 

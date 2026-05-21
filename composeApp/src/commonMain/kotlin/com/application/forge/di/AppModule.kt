@@ -11,13 +11,14 @@ import com.application.forge.ui.screens.dashboard.DashboardViewModel
 import com.application.forge.ui.screens.workout.WorkoutViewModel
 import com.application.forge.ui.screens.profile.ProfileViewModel
 import com.application.forge.ui.screens.progress.ProgressViewModel
+import com.application.forge.domain.usecase.GetAllWorkoutsUseCase
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val appModule = module {
 
     // Data Layer
-    // Репозитории — одиночки
+    // Репозитории
 
     single<WorkoutRepository> { WorkoutRepositoryImpl() }
     single<UserRepository>    { UserRepositoryImpl() }
@@ -27,9 +28,10 @@ val appModule = module {
     factory { GetTodayWorkoutUseCase(get(), get()) }
     factory { GetMuscleStatusUseCase(get()) }
     factory { GetUserProfileUseCase(get()) }
+    factory { GetAllWorkoutsUseCase(get()) }
 
     // UI Layer
-    // ViewModel — живёт пока жив экран
+    // ViewModel
 
     viewModelOf(::DashboardViewModel)
 

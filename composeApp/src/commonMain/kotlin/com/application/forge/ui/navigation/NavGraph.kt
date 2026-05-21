@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,31 +16,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.application.forge.ui.screens.dashboard.DashboardEvent
 import com.application.forge.ui.screens.dashboard.DashboardScreen
 import com.application.forge.ui.screens.dashboard.DashboardViewModel
 import com.application.forge.ui.screens.profile.ProfileScreen
 import com.application.forge.ui.screens.progress.ProgressScreen
+import com.application.forge.ui.screens.workout.WorkoutPickerScreen
 import com.application.forge.ui.screens.workout.WorkoutScreen
 import com.application.forge.ui.screens.workout.WorkoutSummaryScreen
 import com.application.forge.ui.screens.workout.WorkoutViewModel
 import com.application.forge.ui.theme.ForgeColors
 import org.koin.compose.viewmodel.koinViewModel
 
-// NavGraph
 @Composable
 fun ForgeNavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String = Screen.Dashboard.route,
 ) {
-    // Текущий маршрут для подсветки в BottomNavBar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Dashboard.route
 
-    // Экраны где показывается нижняя панель
     val showBottomBar = currentRoute in listOf(
         Screen.Dashboard.route,
         Screen.Progress.route,
@@ -49,13 +49,9 @@ fun ForgeNavGraph(
         Screen.Profile.route,
     )
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        // Основной контент
-        Box(
-            modifier = Modifier.weight(1f),
-        ) {
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        Box(modifier = Modifier.weight(1f)) {
             NavHost(
                 navController = navController,
                 startDestination = startDestination,
@@ -69,15 +65,34 @@ fun ForgeNavGraph(
                     DashboardScreen(
                         state = state,
                         onEvent = { event ->
-                            viewModel.onEvent(event)
-                            // Навигация на экран тренировки
+                            when (event) {
+                                is DashboardEvent.StartWorkout -> {
+                                    navController.navigate(Screen.WorkoutPicker.route)
+                                }
+                                else -> viewModel.onEvent(event)
+                            }
                         },
                     )
                 }
 
-                // Workout
-                composable(route = Screen.Workout.route) {
-                    // Экран активной тренировки
+                // Выбор тренировки
+                composable(route = Screen.WorkoutPicker.route) {
+                    WorkoutPickerScreen(
+                        onWorkoutSelected = { workoutId ->
+                            navController.navigate(Screen.Workout.routeWithId(workoutId))
+                        },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+
+                // Активная тренировка
+                // workoutId читается автоматически через SavedStateHandle в ViewModel
+                composable(
+                    route = Screen.Workout.route,
+                    arguments = listOf(
+                        navArgument("workoutId") { type = NavType.StringType },
+                    ),
+                ) {
                     var isFinished by remember { mutableStateOf(false) }
                     val workoutViewModel: WorkoutViewModel = koinViewModel()
                     val state by workoutViewModel.state.collectAsStateWithLifecycle()
@@ -85,9 +100,11 @@ fun ForgeNavGraph(
                     if (isFinished) {
                         WorkoutSummaryScreen(
                             state = state,
-                            onBack = { navController.navigate(Screen.Dashboard.route) {
-                                popUpTo(Screen.Dashboard.route) { inclusive = true }
-                            }},
+                            onBack = {
+                                navController.navigate(Screen.Dashboard.route) {
+                                    popUpTo(Screen.Dashboard.route) { inclusive = true }
+                                }
+                            },
                         )
                     } else {
                         WorkoutScreen(
@@ -102,7 +119,7 @@ fun ForgeNavGraph(
                     ProgressScreen()
                 }
 
-                // AI Cha
+                // AI Chat
                 composable(route = Screen.AIChat.route) {
                     PlaceholderScreen(title = "ИИ ТРЕНЕР")
                 }
@@ -119,7 +136,6 @@ fun ForgeNavGraph(
             }
         }
 
-        // Нижняя панель навигации
         if (showBottomBar) {
             ForgeBottomNavBar(
                 currentRoute = currentRoute,
@@ -129,15 +145,13 @@ fun ForgeNavGraph(
                             saveState = true
                         }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState    = true
                     }
                 },
             )
         }
     }
 }
-
-// Placeholder
 
 @Composable
 fun PlaceholderScreen(title: String) {

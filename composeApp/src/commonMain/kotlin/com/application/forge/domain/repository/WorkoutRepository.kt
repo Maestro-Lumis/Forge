@@ -5,6 +5,8 @@ import com.application.forge.domain.model.MuscleStatus
 
 interface WorkoutRepository {
     suspend fun getTodayWorkout(): Workout?
+    suspend fun getAllWorkouts(): List<Workout>
+    suspend fun getWorkoutById(id: String): Workout?
     suspend fun getMuscleStatuses(): List<MuscleStatus>
     suspend fun getWorkoutHistory(): List<Workout>
 }

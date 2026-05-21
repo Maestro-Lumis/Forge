@@ -1,8 +1,9 @@
 package com.application.forge.ui.screens.workout
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.application.forge.domain.usecase.GetTodayWorkoutUseCase
+import com.application.forge.domain.repository.WorkoutRepository
 import com.application.forge.domain.usecase.GetUserProfileUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,8 +14,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class WorkoutViewModel(
-    private val getTodayWorkoutUseCase: GetTodayWorkoutUseCase,
+    private val workoutRepository: WorkoutRepository,
     private val getUserProfileUseCase: GetUserProfileUseCase,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WorkoutState())
@@ -24,28 +26,25 @@ class WorkoutViewModel(
     private var restTimerJob: Job? = null
 
     init {
-        loadWorkout()
-        startWorkoutTimer()
+        // workoutId автоматически берётся из nav-аргумента через SavedStateHandle
+        val workoutId: String = savedStateHandle["workoutId"] ?: ""
+        loadWorkout(workoutId)
     }
 
-    // Загрузка тренировки и профиля
-    private fun loadWorkout() {
+    private fun loadWorkout(workoutId: String) {
         viewModelScope.launch {
             try {
-                val workout = getTodayWorkoutUseCase()
+                val workout = workoutRepository.getWorkoutById(workoutId)
                 val profile = getUserProfileUseCase()
 
                 if (workout == null) {
-                    _state.update { it.copy(isLoading = false, error = "Тренировка не запланирована") }
+                    _state.update { it.copy(isLoading = false, error = "Тренировка не найдена") }
                     return@launch
                 }
 
-                // Строим карту предупреждений: имя упражнения -> текст
                 val injuryWarningMap = profile.injuries
                     .flatMap { injury ->
-                        injury.excludedExercises.map { exName ->
-                            exName to injury.warningMessage
-                        }
+                        injury.excludedExercises.map { exName -> exName to injury.warningMessage }
                     }
                     .toMap()
 
@@ -60,20 +59,23 @@ class WorkoutViewModel(
 
                 _state.update { state ->
                     state.copy(
-                        isLoading = false,
+                        isLoading    = false,
                         workoutTitle = workout.dayName,
-                        exercises = exercises,
-                        streakDays = profile.streakDays,
+                        exercises    = exercises,
+                        streakDays   = profile.streakDays,
                     )
                 }
+
+                startWorkoutTimer()
+
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
-    // Глобальный таймер тренировки
     private fun startWorkoutTimer() {
+        workoutTimerJob?.cancel()
         workoutTimerJob = viewModelScope.launch {
             while (true) {
                 delay(1_000)
@@ -82,7 +84,6 @@ class WorkoutViewModel(
         }
     }
 
-    // Завершить текущий подход
     fun completeSet(reps: Int?, weight: Float?) {
         val current = _state.value
         val exercise = current.currentExercise ?: return
@@ -90,13 +91,13 @@ class WorkoutViewModel(
 
         val updatedSets = exercise.sets.mapIndexed { i, set ->
             when {
-                i == setIndex -> set.copy(
-                    actualReps = reps,
+                i == setIndex     -> set.copy(
+                    actualReps   = reps,
                     actualWeight = weight,
-                    status = SetStatus.DONE,
+                    status       = SetStatus.DONE,
                 )
                 i == setIndex + 1 -> set.copy(status = SetStatus.ACTIVE)
-                else -> set
+                else              -> set
             }
         }
 
@@ -106,22 +107,20 @@ class WorkoutViewModel(
 
         val allSetsDone = updatedSets.all { it.status == SetStatus.DONE }
         val newSetIndex = if (allSetsDone) setIndex else setIndex + 1
-        val newVolume = calculateVolume(updatedExercises)
+        val newVolume   = calculateVolume(updatedExercises)
 
         _state.update { state ->
             state.copy(
-                exercises = updatedExercises,
+                exercises       = updatedExercises,
                 currentSetIndex = newSetIndex,
-                totalVolumeKg = newVolume,
+                totalVolumeKg   = newVolume,
             )
         }
 
-        // Запускаем таймер отдыха после подхода
         val restSeconds = exercise.restSeconds.takeIf { it > 0 } ?: current.restTimer.totalSeconds
         startRestTimer(restSeconds)
     }
 
-    // Перейти к следующему упражнению
     fun nextExercise() {
         val current = _state.value
         if (current.isLastExercise) {
@@ -129,7 +128,7 @@ class WorkoutViewModel(
             return
         }
 
-        val nextIndex = current.currentExerciseIndex + 1
+        val nextIndex    = current.currentExerciseIndex + 1
         val nextExercise = current.exercises[nextIndex]
         val activatedSets = nextExercise.sets.mapIndexed { i, set ->
             if (i == 0) set.copy(status = SetStatus.ACTIVE) else set
@@ -141,36 +140,34 @@ class WorkoutViewModel(
 
         _state.update { state ->
             state.copy(
-                exercises = updatedExercises,
+                exercises            = updatedExercises,
                 currentExerciseIndex = nextIndex,
-                currentSetIndex = 0,
+                currentSetIndex      = 0,
             )
         }
     }
 
-    // Выбрать пресет таймера отдыха
     fun setRestPreset(seconds: Int) {
         stopRestTimer()
         _state.update { state ->
             state.copy(
                 restTimer = state.restTimer.copy(
-                    totalSeconds = seconds,
+                    totalSeconds     = seconds,
                     remainingSeconds = seconds,
-                    isRunning = false,
+                    isRunning        = false,
                 )
             )
         }
     }
 
-    // Запустить таймер отдыха
     fun startRestTimer(seconds: Int) {
         stopRestTimer()
         _state.update { state ->
             state.copy(
                 restTimer = state.restTimer.copy(
-                    totalSeconds = seconds,
+                    totalSeconds     = seconds,
                     remainingSeconds = seconds,
-                    isRunning = true,
+                    isRunning        = true,
                 )
             )
         }
@@ -180,9 +177,7 @@ class WorkoutViewModel(
                 delay(1_000)
                 remaining--
                 _state.update { state ->
-                    state.copy(
-                        restTimer = state.restTimer.copy(remainingSeconds = remaining)
-                    )
+                    state.copy(restTimer = state.restTimer.copy(remainingSeconds = remaining))
                 }
             }
             _state.update { state ->
@@ -191,7 +186,6 @@ class WorkoutViewModel(
         }
     }
 
-    // Остановить таймер отдыха
     fun stopRestTimer() {
         restTimerJob?.cancel()
         restTimerJob = null
@@ -200,18 +194,16 @@ class WorkoutViewModel(
         }
     }
 
-    // Завершить тренировку вручную
     fun finishWorkout() {
         _state.update { it.copy(isWorkoutFinished = true) }
     }
 
-    // Подсчёт суммарного объёма (повторения × вес)
     private fun calculateVolume(exercises: List<ExerciseUiModel>): Float {
         return exercises.sumOf { ex ->
             ex.sets
                 .filter { it.status == SetStatus.DONE }
                 .sumOf { set ->
-                    val reps = set.actualReps ?: 0
+                    val reps   = set.actualReps ?: 0
                     val weight = set.actualWeight ?: 0f
                     (reps * weight).toDouble()
                 }
